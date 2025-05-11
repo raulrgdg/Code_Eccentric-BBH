@@ -24,6 +24,18 @@ def template_waveform(mass1,mass2):
 
     return hp_non_eccen
 
+#Optimization method: Differential Evolution
+def objective_function(x):
+    q,mchirp=x
+
+    mass1 = mass1_from_mchirp_q(mchirp, q)
+    mass2 = mass2_from_mchirp_q(mchirp, q)
+
+    hp_non_eccen=template_waveform(mass1,mass2)   
+
+    overlap, _ = match(hp_eccen, hp_non_eccen,  low_frequency_cutoff=20.0, high_frequency_cutoff=1024.0 ,psd=None, subsample_interpolation=True)
+    return -overlap
+
 #Final function: obtaining the fitting factor and optimal template parameters for a given signal.
 def maxoverlap_sig_tem(s_q, s_mchirp, e):
     #Signal
@@ -42,18 +54,6 @@ def maxoverlap_sig_tem(s_q, s_mchirp, e):
     hp_eccen.resize(1024)
     hp_eccen /= max(abs(hp_eccen))
 
-    #Optimization method: Differential Evolution
-    def objective_function(x):
-        q,mchirp=x
-
-        mass1 = mass1_from_mchirp_q(mchirp, q)
-        mass2 = mass2_from_mchirp_q(mchirp, q)
-    
-        hp_non_eccen=template_waveform(mass1,mass2)   
-
-        overlap, _ = match(hp_eccen, hp_non_eccen,  low_frequency_cutoff=20.0, high_frequency_cutoff=1024.0 ,psd=None, subsample_interpolation=True)
-        return -overlap
-    
     #Specifying the bounds for the mass ratio and the chirp mass of the template.
     bounds=[(0.1,1.0),(5.8,7.1)] 
     result_DE=differential_evolution(objective_function, bounds, popsize=35)
